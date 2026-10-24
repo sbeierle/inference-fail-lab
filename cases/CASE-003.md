@@ -1,27 +1,11 @@
-# CASE-003: Triton Fallback Kernel Compiler Crash on Non-Power-of-2 Head Sizes & KV Blocks
+# CASE-003: Triton decode compile aborts (withdrawn as a vLLM bug)
 
-## 1. Environment & Pinning
-- **Engine:** vLLM `ROCM_ATTN` Triton Fallback (`_paged_attn_decode_kernel`)
-- **ROCm / PyTorch:** ROCm 6.4 / PyTorch 2.9.1 / Triton 3.5.1
-- **Hardware:** AMD Radeon RX 7900 XTX (RDNA3 / `gfx1100`)
-- **Architektur-Invariante:** Triton Vektor-Register erzwingen strikt `range must be a power of 2`.
+**Status: ⚪ Withdrawn.** The aborts came from our own harness, not from vLLM's launcher.
 
-## 2. Failure Signature & Observability
-- **Crash-Typ:** Hard JIT Compiler Exception (`arange's range must be a power of 2`).
-- **Betroffene Topologien:**
-  - `HEAD_SIZE = 96` (Crash bei allen Block-Größen)
-  - `HEAD_SIZE = 192` (Crash bei allen Block-Größen)
-  - `BLOCK_SIZE = 528` (Crash im unkorrigierten Upstream-Kernel)
-- **Status:** **[gemessen: RX 7900 XTX / ROCm 6.4 / Triton 3.5.1]**
+| Symptom we saw | What it actually was |
+| :--- | :--- |
+| `arange's arguments must be tl.constexpr` | Triton placeholder, active when vLLM's `HAS_TRITON` import guard fails (`vllm/triton_utils/importing.py`); strips `constexpr`. |
+| `arange's range must be a power of 2` at `tl.arange(0, BLOCK_SIZE)` | Harness passed the raw physical block size (528) as the tile. The launcher passes `min(block_size, 128)` for power-of-two blocks and 32 otherwise; head size is padded via `HEAD_SIZE_PADDED = next_power_of_2(head_size)`. |
+| `out of resource: shared memory 262144 > 65536` | Cause not confirmed; consistent with a tile of 1024 from the same wrong argument. |
 
-## 3. Gemessene Testmatrix
-
-| Head Size | Block Size | Status | Ursache |
-| :--- | :--- | :--- | :--- |
-| **96** | 16 / 64 / 528 | ❌ **CRASH** | `tl.arange(0, 96)` ist keine 2^n |
-| **128** | 16 / 64 / 528 | ✅ **OK** | 128 = 2^7 (gepadded mit P2-Masking) |
-| **192** | 16 / 64 / 528 | ❌ **CRASH** | `tl.arange(0, 192)` ist keine 2^n |
-| **256** | 16 / 64 / 528 | ✅ **OK** | 256 = 2^8 (native 2^n) |
-
-## 4. Remediation & Upstream Patch
-`HEAD_SIZE` und `BLOCK_SIZE` müssen im Kernel über `next_power_of_2()` gepuffert und unvollständige Vektoren über boolesche Masken (`tl.load(..., mask=...)`) entkoppelt werden.
+The earlier README claims (crash for head 96/192, "bit-identical", root cause `tl.arange(0, HEAD_SIZE)`) were contradicted by the upstream launcher code and are withdrawn. See CASE-004 for the corrected, launcher-mirroring test.
