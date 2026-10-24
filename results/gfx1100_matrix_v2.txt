@@ -1,0 +1,495 @@
+### --case ok-d64-bs528 --ctx 527
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=ok-d64-bs528 ctx=527 seqs=1 q/kv heads=32/8 head=64 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=64 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.001091 at (seq 0, q-head 2) | values outside tolerance: 0/2048
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.2157)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case ok-d64-bs528 --ctx 528
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=ok-d64-bs528 ctx=528 seqs=1 q/kv heads=32/8 head=64 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=64 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000970 at (seq 0, q-head 12) | values outside tolerance: 0/2048
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.2157)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case ok-d64-bs528 --ctx 529
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=ok-d64-bs528 ctx=529 seqs=1 q/kv heads=32/8 head=64 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=64 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000797 at (seq 0, q-head 3) | values outside tolerance: 0/2048
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 0.9203)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case ok-d64-bs528 --ctx 1024
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=ok-d64-bs528 ctx=1024 seqs=1 q/kv heads=32/8 head=64 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=64 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000645 at (seq 0, q-head 19) | values outside tolerance: 0/2048
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.3968)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case ok-d64-bs528 --ctx 8192
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=ok-d64-bs528 ctx=8192 seqs=1 q/kv heads=32/8 head=64 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=64 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000209 at (seq 0, q-head 7) | values outside tolerance: 0/2048
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 5.6780)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case ok-d64-bs528 --ctx 32768
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=ok-d64-bs528 ctx=32768 seqs=1 q/kv heads=32/8 head=64 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=64 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000120 at (seq 0, q-head 10) | values outside tolerance: 0/2048
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 3.9819)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case ok-d256-bs16-gqa4 --ctx 527
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=ok-d256-bs16-gqa4 ctx=527 seqs=1 q/kv heads=32/8 head=256 block=16 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=16 PHYSICAL_BLOCK_SIZE=16 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000704 at (seq 0, q-head 19) | values outside tolerance: 0/8192
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 5.5783)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case ok-d256-bs16-gqa4 --ctx 528
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=ok-d256-bs16-gqa4 ctx=528 seqs=1 q/kv heads=32/8 head=256 block=16 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=16 PHYSICAL_BLOCK_SIZE=16 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000898 at (seq 0, q-head 0) | values outside tolerance: 0/8192
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 5.5794)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case ok-d256-bs16-gqa4 --ctx 529
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=ok-d256-bs16-gqa4 ctx=529 seqs=1 q/kv heads=32/8 head=256 block=16 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=16 PHYSICAL_BLOCK_SIZE=16 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000765 at (seq 0, q-head 31) | values outside tolerance: 0/8192
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.9134)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case ok-d256-bs16-gqa4 --ctx 1024
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=ok-d256-bs16-gqa4 ctx=1024 seqs=1 q/kv heads=32/8 head=256 block=16 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=16 PHYSICAL_BLOCK_SIZE=16 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000872 at (seq 0, q-head 2) | values outside tolerance: 0/8192
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.6171)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case ok-d256-bs16-gqa4 --ctx 8192
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=ok-d256-bs16-gqa4 ctx=8192 seqs=1 q/kv heads=32/8 head=256 block=16 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=16 PHYSICAL_BLOCK_SIZE=16 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000213 at (seq 0, q-head 10) | values outside tolerance: 0/8192
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.3328)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case ok-d256-bs16-gqa4 --ctx 32768
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=ok-d256-bs16-gqa4 ctx=32768 seqs=1 q/kv heads=32/8 head=256 block=16 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=16 PHYSICAL_BLOCK_SIZE=16 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000131 at (seq 0, q-head 23) | values outside tolerance: 0/8192
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 2.7307)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d96-bs528 --ctx 527
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d96-bs528 ctx=527 seqs=1 q/kv heads=32/8 head=96 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000991 at (seq 0, q-head 19) | values outside tolerance: 0/3072
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.1419)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d96-bs528 --ctx 528
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d96-bs528 ctx=528 seqs=1 q/kv heads=32/8 head=96 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000673 at (seq 0, q-head 3) | values outside tolerance: 0/3072
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.1412)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d96-bs528 --ctx 529
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d96-bs528 ctx=529 seqs=1 q/kv heads=32/8 head=96 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000647 at (seq 0, q-head 10) | values outside tolerance: 0/3072
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 0.2998)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d96-bs528 --ctx 1024
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d96-bs528 ctx=1024 seqs=1 q/kv heads=32/8 head=96 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000577 at (seq 0, q-head 11) | values outside tolerance: 0/3072
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.8628)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d96-bs528 --ctx 8192
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d96-bs528 ctx=8192 seqs=1 q/kv heads=32/8 head=96 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000186 at (seq 0, q-head 12) | values outside tolerance: 0/3072
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.1965)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d96-bs528 --ctx 32768
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d96-bs528 ctx=32768 seqs=1 q/kv heads=32/8 head=96 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000109 at (seq 0, q-head 3) | values outside tolerance: 0/3072
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 5.6678)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d192-bs528 --ctx 527
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d192-bs528 ctx=527 seqs=1 q/kv heads=32/8 head=192 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000738 at (seq 0, q-head 28) | values outside tolerance: 0/6144
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.1747)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d192-bs528 --ctx 528
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d192-bs528 ctx=528 seqs=1 q/kv heads=32/8 head=192 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000893 at (seq 0, q-head 25) | values outside tolerance: 0/6144
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.1748)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d192-bs528 --ctx 529
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d192-bs528 ctx=529 seqs=1 q/kv heads=32/8 head=192 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.001024 at (seq 0, q-head 8) | values outside tolerance: 0/6144
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.8090)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d192-bs528 --ctx 1024
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d192-bs528 ctx=1024 seqs=1 q/kv heads=32/8 head=192 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000648 at (seq 0, q-head 1) | values outside tolerance: 0/6144
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.5641)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d192-bs528 --ctx 8192
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d192-bs528 ctx=8192 seqs=1 q/kv heads=32/8 head=192 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000283 at (seq 0, q-head 24) | values outside tolerance: 0/6144
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.5341)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d192-bs528 --ctx 32768
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d192-bs528 ctx=32768 seqs=1 q/kv heads=32/8 head=192 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000122 at (seq 0, q-head 2) | values outside tolerance: 0/6144
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.8980)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d256-bs528 --ctx 527
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d256-bs528 ctx=527 seqs=1 q/kv heads=16/2 head=256 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,2) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000854 at (seq 0, q-head 14) | values outside tolerance: 0/4096
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.2992)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d256-bs528 --ctx 528
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d256-bs528 ctx=528 seqs=1 q/kv heads=16/2 head=256 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,2) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000852 at (seq 0, q-head 14) | values outside tolerance: 0/4096
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.2993)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d256-bs528 --ctx 529
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d256-bs528 ctx=529 seqs=1 q/kv heads=16/2 head=256 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,2) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.001009 at (seq 0, q-head 0) | values outside tolerance: 0/4096
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 1.4389)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d256-bs528 --ctx 1024
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d256-bs528 ctx=1024 seqs=1 q/kv heads=16/2 head=256 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,2) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000542 at (seq 0, q-head 12) | values outside tolerance: 0/4096
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.9701)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d256-bs528 --ctx 8192
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d256-bs528 ctx=8192 seqs=1 q/kv heads=16/2 head=256 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,2) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000165 at (seq 0, q-head 14) | values outside tolerance: 0/4096
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 5.0361)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d256-bs528 --ctx 32768
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d256-bs528 ctx=32768 seqs=1 q/kv heads=16/2 head=256 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,2) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000091 at (seq 0, q-head 9) | values outside tolerance: 0/4096
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.6806)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d128-bs528-fp16 --ctx 527
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d128-bs528-fp16 ctx=527 seqs=1 q/kv heads=32/8 head=128 block=528 dtype=torch.float16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000120 at (seq 0, q-head 21) | values outside tolerance: 0/4096
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.7923)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d128-bs528-fp16 --ctx 528
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d128-bs528-fp16 ctx=528 seqs=1 q/kv heads=32/8 head=128 block=528 dtype=torch.float16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000105 at (seq 0, q-head 21) | values outside tolerance: 0/4096
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.7922)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d128-bs528-fp16 --ctx 529
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d128-bs528-fp16 ctx=529 seqs=1 q/kv heads=32/8 head=128 block=528 dtype=torch.float16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000103 at (seq 0, q-head 29) | values outside tolerance: 0/4096
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.0186)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d128-bs528-fp16 --ctx 1024
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d128-bs528-fp16 ctx=1024 seqs=1 q/kv heads=32/8 head=128 block=528 dtype=torch.float16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000064 at (seq 0, q-head 23) | values outside tolerance: 0/4096
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.4200)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d128-bs528-fp16 --ctx 8192
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d128-bs528-fp16 ctx=8192 seqs=1 q/kv heads=32/8 head=128 block=528 dtype=torch.float16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000020 at (seq 0, q-head 2) | values outside tolerance: 0/4096
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.3754)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d128-bs528-fp16 --ctx 32768
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d128-bs528-fp16 ctx=32768 seqs=1 q/kv heads=32/8 head=128 block=528 dtype=torch.float16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(1,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000013 at (seq 0, q-head 6) | values outside tolerance: 0/4096
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.9120)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d256-bs528 --seqs 8 --ctx 8192
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d256-bs528 ctx=8192 seqs=8 q/kv heads=16/2 head=256 block=528 dtype=torch.bfloat16 table=shuffled ragged=False nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(8,2) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=256 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000274 at (seq 5, q-head 1) | values outside tolerance: 0/32768
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.7533)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+### --case p1-d96-bs528 --seqs 8 --ctx 8192 --ragged
+[A2] env: torch 2.9.1+rocm6.4 | triton 3.5.1 | hip 6.4.43484-123eb5128 | Radeon RX 7900 XTX
+[A2] vllm commit be2de711989bb273e108c41f95d868122b154f9d | local changes: M vllm/triton_utils/importing.py
+[A2] case=p1-d96-bs528 ctx=8192 seqs=8 q/kv heads=32/8 head=96 block=528 dtype=torch.bfloat16 table=shuffled ragged=True nan_fill=False
+[A2] layout self-check (cache vs kernel address formulas): PASS
+[A2] launch: grid=(8,8) tile(BLOCK_SIZE)=32 PHYSICAL_BLOCK_SIZE=528 HEAD_SIZE_PADDED=128 q_padded=16 V=[blocks,kv_heads,head,block] interleave=0
+[A2] first call vs second call bitwise identical: True
+[A2] NaN in output: 0 | max abs err vs fp32: 0.000261 at (seq 7, q-head 25) | values outside tolerance: 0/24576
+[A2] sensitivity check (one corrupted cache block): harness FLAGS it (max err 4.9879)
+[A2] RESULT PASS: within tolerance, deterministic, harness sensitive.
+[A2] exit code 0
+
+=================== SUMMARY ===================
+### --case ok-d64-bs528 --ctx 527	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case ok-d64-bs528 --ctx 528	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case ok-d64-bs528 --ctx 529	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case ok-d64-bs528 --ctx 1024	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case ok-d64-bs528 --ctx 8192	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case ok-d64-bs528 --ctx 32768	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case ok-d256-bs16-gqa4 --ctx 527	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case ok-d256-bs16-gqa4 --ctx 528	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case ok-d256-bs16-gqa4 --ctx 529	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case ok-d256-bs16-gqa4 --ctx 1024	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case ok-d256-bs16-gqa4 --ctx 8192	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case ok-d256-bs16-gqa4 --ctx 32768	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d96-bs528 --ctx 527	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d96-bs528 --ctx 528	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d96-bs528 --ctx 529	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d96-bs528 --ctx 1024	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d96-bs528 --ctx 8192	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d96-bs528 --ctx 32768	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d192-bs528 --ctx 527	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d192-bs528 --ctx 528	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d192-bs528 --ctx 529	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d192-bs528 --ctx 1024	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d192-bs528 --ctx 8192	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d192-bs528 --ctx 32768	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d256-bs528 --ctx 527	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d256-bs528 --ctx 528	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d256-bs528 --ctx 529	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d256-bs528 --ctx 1024	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d256-bs528 --ctx 8192	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d256-bs528 --ctx 32768	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d128-bs528-fp16 --ctx 527	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d128-bs528-fp16 --ctx 528	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d128-bs528-fp16 --ctx 529	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d128-bs528-fp16 --ctx 1024	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d128-bs528-fp16 --ctx 8192	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d128-bs528-fp16 --ctx 32768	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d256-bs528 --seqs 8 --ctx 8192	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
+### --case p1-d96-bs528 --seqs 8 --ctx 8192 --ragged	RESULT PASS: within tolerance, deterministic, harness sensitive.	exit code 0
