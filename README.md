@@ -1,94 +1,111 @@
 # 🔬 Inference Fail-Lab
 
-> **Systematic edge-case verification, failure telemetry, and kernel-level invariant audits in LLM serving engines (vLLM, SGLang, TensorRT-LLM).**
+> **Edge-case verification, failure telemetry, and kernel-level invariant checks for LLM serving engines (vLLM, SGLang, TensorRT-LLM).**
 
 ---
 
 ## ⚡ What is the Inference Fail-Lab?
 
-Modern LLM serving engines operate at the fragile intersection of high-level dynamic scheduling (Paged Attention, Chunked Prefill, GQA) and low-level accelerator hardware (NVIDIA CUDA SMs, AMD ROCm RDNA/CDNA Compute Units). 
+Modern LLM serving engines sit at the intersection of dynamic scheduling (Paged Attention, Chunked Prefill, GQA) and accelerator hardware (NVIDIA CUDA, AMD ROCm). When these layers collide, they rarely fail with a clear error message. Typical outcomes:
 
-When these layers collide, they rarely fail with polite error messages. They fail with:
-1. **Silent Data Corruption:** Numbers silently drift, attention scores distort, outputs degrade unnoticed.
-2. **Hard Compiler Aborts:** Dynamic JIT kernels crash at runtime due to unpadded register boundaries.
-3. **Deadlocks & Page Faults:** Out-of-bounds pointer arithmetic triggers illegal memory access.
+1. **Silent data corruption:** attention outputs are wrong, nothing crashes, nobody notices.
+2. **Hard compiler aborts:** JIT kernels refuse to compile for unusual tensor shapes.
+3. **Memory faults and deadlocks:** out-of-bounds access, GPU page faults, stuck schedulers.
 
-The **Inference Fail-Lab** isolates, reproduces, and resolves these edge cases on bare-metal hardware. Every case is backed by an independent verification harness, bitwise reference parity against FP32 baselines, and reproducible telemetry.
+The Fail-Lab isolates and reproduces such cases on bare-metal hardware. Cases marked *verified* have a standalone harness and a comparison against an FP32 PyTorch reference. Cases marked *triage* or *benchmarking* do not yet.
 
 ---
 
-## 🧭 Laboratory Blueprint & Architecture
+## 🧭 Where the failures happen
 
 ```text
-[ LLM Engine Request ] (e.g. Qwen / DeepSeek / Llama)
+[ LLM engine request ] (e.g. Qwen / DeepSeek / Llama)
 │
 ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ ⚠️ THE CRITICAL INTERFACE (Hardware / Kernel Boundary)     │
-│   • Asymmetric Head Dimensions (e.g. 96, 192 vs 128)        │
-│   • Non-Power-of-2 KV Block Layouts (e.g. 528 vs 16/32/64)  │
-│   • Triton JIT Compiler Register Invariants (2^n)           │
+│ KERNEL / HARDWARE BOUNDARY                                  │
+│   • Head sizes that are not a power of 2 (e.g. 96, 192)     │
+│   • Large or odd KV block sizes (e.g. 528 vs 16/32/64)      │
+│   • Triton compile-time rule: tl.arange needs a power of 2  │
+│   • Cache write / read layout mismatches                    │
 └─────────────────────────────────────────────────────────────┘
 │
-├── [ ❌ Unpatched Engine ] ──► Compiler Abort / Silent Corruption
-└── [ ✅ Fail-Lab Harness ] ──► P2-Masking ──► Bit-Identical Output
+├── unpadded or mis-sized path ──► compiler abort OR silent wrong output
+└── padded + masked path       ──► output within tolerance of FP32 reference
 ```
 
 ---
 
-## 📋 Verified Cases Registry
+## 📋 Cases Registry
 
-| Case ID | Target Architecture | Engine / Subsystem | Failure Signature | Resolution Status |
+| Case ID | Target | Engine / Subsystem | Failure signature | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| [**CASE-003**](cases/CASE-003.md) | **AMD RDNA3** (`gfx1100` / RX 7900 XTX) | vLLM `ROCM_ATTN` (Triton Decode) | Hard JIT Compiler Crash (`arange range must be power of 2`) | 🟢 **Verified & Patched** (Delta < 0.002) |
-| **CASE-002** | **NVIDIA Blackwell** (GB300 / SM 10.3) | vLLM `TRITON_MLA` Attention | Batch Invariance Violation via Chunked LSE Rescaling | 🟡 *In Triage / Isolation* |
-| **CASE-001** | **NVIDIA Grace-Blackwell** (GB10) | Chunked Prefill Scheduler | Engine Deadlock on `FULL_AND_PIECEWISE` Attention | 🟡 *Benchmarking* |
+| [**CASE-003**](cases/CASE-003.md) | AMD RDNA3 (`gfx1100`, RX 7900 XTX) | vLLM Triton paged-attention decode path | JIT compiler abort (`arange's range must be a power of 2`) on vLLM `<VERSION / COMMIT>` | 🟡 **Patched in standalone harness; not yet re-verified on current vLLM `main`** |
+| **CASE-002** | NVIDIA Blackwell (GB300 / SM 10.3) | vLLM `TRITON_MLA` attention | Batch invariance violation via chunked LSE rescaling | 🟡 *In triage* |
+| **CASE-001** | NVIDIA Grace-Blackwell (GB10) | Chunked prefill scheduler | Engine deadlock on `FULL_AND_PIECEWISE` attention | 🟡 *Benchmarking* |
 
 ---
 
-## 🔍 Showcase Deep-Dive: CASE-003
+## 🔍 Deep-Dive: CASE-003
 
-### 1. The Bug in Plain English (Why did it break?)
-> **The Golden Rule of Triton:** *Triton vector registers demand powers of 2 ($2^n$: 16, 32, 64, 128, 256...).*
+### 1. What broke (plain English)
 
-Modern hybrid models do not always obey clean power-of-2 conventions. When a model specifies a **Head Size of 96 or 192**, or serving configurations allocate **Block Sizes of 528**, upstream vLLM directly passed these numbers into `tl.arange(0, DIM)`. 
+> **Triton rule:** `tl.arange(0, N)` requires `N` to be a power of 2 (16, 32, 64, 128, 256, ...).
 
-Because 96, 192, and 528 cannot be factored directly into clean binary registers, the Triton JIT compiler immediately panicked:
+Some models use head sizes like 96 or 192, and some hybrid configurations use KV block sizes like 528. If such a number is passed straight into `tl.arange`, the Triton JIT compiler stops with:
+
 ```text
 [-] CRASH: arange's range must be a power of 2
 ```
 
-### 2. The Solution: Dynamic P2-Padding with 2D Masking
+**Scope of this observation:** it was seen on vLLM `<VERSION / COMMIT>`, kernel `<KERNEL NAME AS IN TRACEBACK>`, file `<PATH:LINE>`, with ROCm 6.4 / PyTorch 2.9.1 / Triton 3.5.1.
 
-Instead of forcing models to rewrite their architecture, the kernel buffers dimensions to the next power of 2 (`next_power_of_2(96) -> 128`) and isolates out-of-bound register positions with boolean masks:
+> ⚠️ **Check against current upstream before relying on this.** The upstream `kernel_paged_attention_2d` already takes `HEAD_SIZE_PADDED = triton.next_power_of_2(head_size)` and masks with `tl.arange(0, HEAD_SIZE_PADDED) < HEAD_SIZE` (visible in the vLLM API docs since v0.9.0). Whether the crash still reproduces on `main` is open. Until it is re-run there, CASE-003 should be read as a historical or version-specific finding.
+
+### 2. The workaround: pad to the next power of 2 and mask
 
 ```python
-# Buffer register allocations to the next power of 2
+# Allocate register range at the next power of 2
 offs_d = tl.arange(0, HEAD_SIZE_P2)
 mask_d = offs_d < HEAD_SIZE
 
-# Load tensor safely without boundary bleed
+# Load without reading past the real head size
 q = tl.load(q_ptr + offs_d, mask=mask_d, other=0.0)
 ```
 
-### 3. Empirical Verification Matrix (Bare-Metal RX 7900 XTX)
+The same idea applies to the token dimension for non-power-of-2 block sizes.
 
-Tested on AMD Radeon RX 7900 XTX (ROCm 6.4, PyTorch 2.9.1, Triton 3.5.1) against an uncompressed FP32 PyTorch baseline:
+### 3. Verification matrix (standalone harness, RX 7900 XTX)
 
-| Head Dimension | KV Block Size | Unpatched Upstream | Fail-Lab Patched Kernel | Max Numerical Delta |
+Setup: AMD Radeon RX 7900 XTX (`gfx1100`), ROCm 6.4, PyTorch 2.9.1, Triton 3.5.1. The patched kernel is compared against an FP32 PyTorch reference. **This tests the kernel in a standalone harness, not vLLM's full path** (allocator, cache writer, metadata builder).
+
+| Head dim | KV block | Unpatched kernel | Patched kernel | Max abs. delta vs FP32 |
 | :--- | :--- | :--- | :--- | :--- |
-| 96 | 16 | ❌ CRASH (arange) | ✅ Operational | 0.000977 (Bit-Ident) |
-| 96 | 64 | ❌ CRASH (arange) | ✅ Operational | 0.000366 (Bit-Ident) |
-| 96 | 528 | ❌ CRASH (arange) | ✅ Operational | 0.000244 (Bit-Ident) |
-| 128 | 528 | ❌ CRASH (arange) | ✅ Operational | 0.000214 (Bit-Ident) |
-| 192 | 16 / 64 / 528 | ❌ CRASH (arange) | ✅ Operational | < 0.000980 (Bit-Ident) |
-| 256 | 16 / 64 / 528 | ✅ Operational | ✅ Operational | < 0.001950 (Bit-Ident) |
+| 96 | 16 | ❌ compile abort | ✅ runs | 0.000977 |
+| 96 | 64 | ❌ compile abort | ✅ runs | 0.000366 |
+| 96 | 528 | ❌ compile abort | ✅ runs | 0.000244 |
+| 128 | 528 | ❌ compile abort | ✅ runs | 0.000214 |
+| 192 | 16 / 64 / 528 | ❌ compile abort | ✅ runs | < 0.000980 |
+| 256 | 16 / 64 / 528 | ✅ runs | ✅ runs | < 0.001950 |
+
+Deltas are within normal bf16/fp16 rounding tolerance. They are **not** bit-identical results, and this README does not claim that.
 
 ---
 
-## 🚀 How to Run the Reproduction Harness
+## ⚠️ Related but distinct: vLLM issue #62697
 
-You do not need to install the entire monolithic vLLM ecosystem to verify this behavior. The harness is completely standalone:
+[vllm-project/vllm#62697](https://github.com/vllm-project/vllm/issues/62697) (reported on RDNA4 `gfx1201`, vLLM `main` @ `dde9aca`) describes a **different failure mode**: `ROCM_ATTN` compiles and runs but returns **silently wrong attention** for some head size / block size combinations, and sometimes causes GPU memory faults. According to that thread:
+
+- **Pattern B** (block 16, MHA, head 192/256) is a cache **write** bug in the HIP `reshape_and_cache` kernel (thread cap of 512). A maintainer reproduced it on an MI355X, so it is not RDNA-specific.
+- **Pattern A** (block ≥ 32, padded head ≥ 128, decode reads) did not reproduce on MI355X and is still open.
+
+The power-of-2 padding described in CASE-003 does **not** address either pattern. They are separate bugs.
+
+---
+
+## 🚀 Reproduction harness
+
+The harness is standalone; no full vLLM install is needed.
 
 ```bash
 # 1. Clone repository
@@ -98,29 +115,29 @@ cd inference-fail-lab
 # 2. Source RDNA3 environment
 source setup_env.sh
 
-# 3. Execute standalone kernel audit
+# 3. Run the standalone kernel check
 python harness/case_003_triton_standalone.py
 ```
 
 ---
 
-## 🛠️ Repository Layout
+## 🛠️ Repository layout
 
 ```text
-├── cases/             # Detailed forensic markdown reports per failure mode
-│   └── CASE-003.md    # Full analysis of ROCm Triton Power-of-2 JIT abort
-├── harness/           # Minimal Working Examples (MWE) reproducing each bug
+├── cases/             # Per-case reports
+│   └── CASE-003.md    # Triton power-of-2 compile abort on ROCm
+├── harness/           # Minimal working examples reproducing each case
 │   └── case_003_triton_standalone.py
-├── telemetry/         # Linux dmesg ringbuffer & GPU fault monitors
+├── telemetry/         # dmesg ring buffer and GPU fault monitors
 │   └── watch_amdgpu.sh
-├── analysis/          # Numerical drift calculators & baseline comparators
+├── analysis/          # Numerical drift calculators and baseline comparators
 ├── requirements.txt   # Pinned dependencies (ROCm PyTorch / Triton)
-└── setup_env.sh       # Hardware architecture pinning script (gfx1100)
+└── setup_env.sh       # Hardware pinning script (gfx1100)
 ```
 
 ---
 
-## 👤 Author & Lab Direction
+## 👤 Author
 
-**Stefan Beierle** – Independent AI Systems Researcher & Failure Analyst  
-*Focus:* Mechanistic LLM Activation Steering, Air-Gapped Serving Infrastructures, Accelerator Telemetry
+**Stefan Beierle**, independent AI systems researcher and failure analyst
+*Focus:* mechanistic LLM activation steering, air-gapped serving infrastructure, accelerator telemetry
