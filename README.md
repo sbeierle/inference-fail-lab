@@ -83,16 +83,19 @@ The earlier matrix with head-size crashes (96 / 192) is **not supported by the l
 ## 🛠️ Repository layout
 
 ```text
-├── cases/             # Per-case reports
+├── cases/             # Per-case reports (CASE-003, CASE-004, issue comment draft)
+├── docs/assets/       # Screenshots from the original CASE-003 write-up (see CASE-003: withdrawn)
 ├── harness/
-│   ├── repro_rocm_attn_ref.py   # v1, NOT equivalent to the issue's setup (superseded)
 │   ├── repro_a_v2.py            # v2, launcher-mirroring, with layout self-check and positive control
 │   ├── run_matrix_v2.sh         # 38-run matrix
-│   └── run_pow2.sh              # 42-run matrix (power-of-two blocks)
-├── telemetry/         # dmesg ring buffer and GPU fault monitors
-├── analysis/          # Numerical drift calculators and baseline comparators
-├── requirements.txt   # Pinned dependencies
-└── setup_env.sh       # Hardware pinning script (gfx1100)
+│   ├── run_pow2.sh              # 42-run matrix (power-of-two blocks)
+│   ├── repro_rocm_attn_ref.py   # v1, NOT equivalent to the issue's setup (superseded)
+│   ├── repro_rocm_attn.py       # earlier direct-call script (superseded)
+│   └── case_003_*.py, verify_case_003.py   # original CASE-003 scripts (withdrawn, kept for the record)
+├── results/           # Raw logs of the 80 runs (gfx1100_matrix_v2.txt, gfx1100_matrix_pow2.txt)
+├── telemetry/         # Run logs and GPU fault monitors
+├── .gitignore
+└── setup_env.sh       # Environment setup (gfx1100)
 ```
 
 ---
