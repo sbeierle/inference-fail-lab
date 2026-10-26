@@ -21,14 +21,14 @@ The lab reproduces such cases on bare-metal hardware and compares against an FP3
 
 | Case | Target | Subsystem | What was observed | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **CASE-004** | AMD RDNA3 (`gfx1100`) vs. RDNA4 (`gfx1201`) | vLLM `kernel_paged_attention_2d`, issue #62697 | **Confirmed Upstream Resolution:** 80/80 runs on gfx1100 established the clean baseline. Upstream maintainers confirmed Pattern A is isolated to gfx1201 Triton/LLVM buffer-ops (< 2 GiB) and mitigated via PR #63735 (`num_stages=1`). | 🟢 **Closed / Verified by Upstream** |
-| **CASE-003** | AMD RDNA3 (`gfx1100`) | Triton decode kernel, direct call | Compile aborts, traced to our harness, not to the vLLM launcher | ⚪ Withdrawn as a vLLM bug |
-| **CASE-002** | NVIDIA Blackwell (GB300 / SM 10.3) | vLLM TRITON_MLA | Batch invariance violation via chunked LSE rescaling | 🟡 Triage, not re-reviewed in this revision |
-| **CASE-001** | NVIDIA Grace-Blackwell (GB10) | Chunked prefill scheduler | Deadlock on FULL_AND_PIECEWISE attention | 🟡 Benchmarking, not re-reviewed in this revision |
+| [**CASE-004**](cases/CASE-004.md) | AMD RDNA3 (`gfx1100`) vs. RDNA4 (`gfx1201`) | vLLM `kernel_paged_attention_2d`, issue #62697 | **Confirmed Upstream Resolution:** 80/80 runs on gfx1100 established the clean baseline. Upstream maintainers confirmed Pattern A is isolated to gfx1201 Triton/LLVM buffer-ops (< 2 GiB) and mitigated via PR #63735 (`num_stages=1`). | 🟢 **Closed / Verified by Upstream** |
+| [**CASE-003**](cases/CASE-003.md) | AMD RDNA3 (`gfx1100`) | Triton decode kernel, direct call | Compile aborts, traced to our harness, not to the vLLM launcher | ⚪ Withdrawn as a vLLM bug |
+| [**CASE-002**](cases/CASE-002.md) | NVIDIA Blackwell (GB300 / SM 10.3) | vLLM TRITON_MLA | Batch invariance violation via chunked LSE rescaling | 🟡 Triage, not re-reviewed in this revision |
+| [**CASE-001**](cases/CASE-001.md) | NVIDIA Grace-Blackwell (GB10) | Chunked prefill scheduler | Deadlock on FULL_AND_PIECEWISE attention | 🟡 Benchmarking, not re-reviewed in this revision |
 
 ---
 
-## 🔍 CASE-004: vLLM #62697 "Pattern A" & "Pattern B" on RDNA (gfx1100 vs. gfx1201)
+## 🔍 [CASE-004](cases/CASE-004.md): vLLM #62697 "Pattern A" & "Pattern B" on RDNA (gfx1100 vs. gfx1201)
 
 **Background.** vllm-project/vllm#62697 reported that on RDNA4 (`gfx1201`), `ROCM_ATTN`'s Triton decode kernel `kernel_paged_attention_2d` produced numerical mismatches and GPU memory faults for block sizes >= 32 with head size >= 128 (Pattern A), alongside a separate cache-writer corruption at block 16 / MHA / head 192/256 (Pattern B).
 
@@ -49,18 +49,18 @@ Subsequent verification by AMD engineers confirmed the partition between the two
    - Upstream Fix: PR #63735 forces `num_stages=1` and a tile-based warp config for RDNA architectures.
 
 **Forensic Conclusion.**
-The `gfx1100` baseline in this lab accurately demonstrated that Pattern A was not an inherent RDNA paged-attention algorithmic failure, but a hardware/compiler-codegen edge case on RDNA4. Case closed with upstream fix PR #63735 (Pattern A) and pending writer PR (Pattern B).
+The `gfx1100` baseline in this lab accurately demonstrated that Pattern A was not an inherent RDNA paged-attention algorithmic failure, but a hardware/compiler-codegen edge case on RDNA4. Case closed with upstream fix PR #63735 (Pattern A) and pending writer PR (Pattern B). See full case documentation: [`cases/CASE-004.md`](cases/CASE-004.md).
 
 ---
 
-## 🧯 CASE-003: Withdrawn as a vLLM bug
-An earlier version described Triton compile aborts for head sizes 96 / 192 and block size 528 as an upstream bug on RDNA3. All three symptoms traced back to harness invocation arguments (missing tile power-of-2 clamping and disabled constexpr guards). Kept in repository history for forensic discipline.
+## 🧯 [CASE-003](cases/CASE-003.md): Withdrawn as a vLLM bug
+An earlier version described Triton compile aborts for head sizes 96 / 192 and block size 528 as an upstream bug on RDNA3. All three symptoms traced back to harness invocation arguments (missing tile power-of-2 clamping and disabled constexpr guards). Kept in repository history for forensic discipline: [`cases/CASE-003.md`](cases/CASE-003.md).
 
 ---
 
 ## 🛠️ Repository layout
 ```text
-├── cases/             # Per-case reports (CASE-003, CASE-004)
+├── cases/             # Per-case reports (CASE-001, CASE-002, CASE-003, CASE-004)
 ├── docs/assets/       # Terminal logs and before/after forensics
 ├── harness/           # Reproducible test harnesses (repro_a_v2.py, matrix runners)
 ├── results/           # Raw logs of 80/80 runs on gfx1100
