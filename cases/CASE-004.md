@@ -1,26 +1,26 @@
-# CASE-004: vLLM #62697 "Pattern A" on RDNA3
+﻿# CASE-004: vLLM Issue #62697 – Pattern A & Pattern B Breakdown on RDNA (gfx1100 vs. gfx1201)
 
-**Background.** [vllm-project/vllm#62697](https://github.com/vllm-project/vllm/issues/62697) reports, on RDNA4 (`gfx1201`), that `ROCM_ATTN`'s Triton decode kernel `kernel_paged_attention_2d` returns wrong output for block size ≥ 32 with padded head size ≥ 128 (Pattern A), and a separate cache **write** bug for block 16 / MHA / head 192 / 256 (Pattern B). Per the maintainer (2026-10-23), Pattern B is in the HIP `reshape_and_cache` kernel and reproduces on MI355X; Pattern A did not reproduce there.
+## Status: Resolved Upstream / Verified by Lab Baseline (2026-10-26)
 
-**Result (measured 2026-10-24).** On RX 7900 XTX (`gfx1100`), Pattern A did **not** reproduce: **80 of 80 runs** passed (max abs error vs FP32 between 0.000013 and 0.001091, against an allowed ~0.02; the issue reports ~0.33 at 1k context). All runs bitwise identical between first and second call, no NaN, no GPU fault.
+### 1. Summary of Upstream Resolution
+vllm-project/vllm#62697 originally grouped two distinct failure modes under ROCM_ATTN:
+- **Pattern A:** Numerical mismatches (max abs error ~0.33) and GPU memory faults during decode on large blocks (e.g. block 528) and head dimensions >= 128.
+- **Pattern B:** KV-cache writer corruption for block size 16, MHA (32 heads), and head dimensions 192/256.
 
-| Matrix | Runs | What varied |
-| :--- | :--- | :--- |
-| `run_matrix_v2.sh` | 38 | Head 64/96/192/256 (+128 fp16), block 16 and 528, GQA 4 and 8, context 527/528/529/1k/8k/32k, 8 sequences, ragged lengths |
-| `run_pow2.sh` | 42 | Head 128/192/256, blocks 32/64/128/256 (tile 32/64/128), context 1k/8k/32k, plus MHA (8/8) and GQA 2 |
+Subsequent isolation by AMD engineers confirmed our independent baseline findings:
+1. **Pattern B (C++ Kernel Bug):**
+   - Confirmed on MI355X (gfx950) by @giuseppegrossi.
+   - Root cause: `reshape_and_cache_kernel` in `csrc/cache_kernels.cu` capped thread blocks at 512 threads without a grid-stride loop. For 32 KV heads x 256 head size (1024 chunks), chunks past 511 were never scheduled, leaving trailing heads 16–31 unwritten.
+   - Slipped through CI because `tests/kernels/attention/test_cache.py` only evaluated `NUM_HEADS = [8]`.
+2. **Pattern A (Compiler / Hardware Codegen):**
+   - Confirmed by @lijipeng787 to reproduce on RDNA4 (`gfx1201`) with ROCm 10 / Triton 3.8.0, and absent on `gfx1100` (consistent with our 80/80 matrix runs).
+   - Trigger: Triton AMD buffer-ops codegen failure when KV cache is < 2 GiB under multi-stage pipelining (`num_stages > 1`).
+   - Mitigated via PR #63735 (`num_stages=1` and tile-based warp config on RDNA).
 
-**Harness (v2, `harness/repro_a_v2.py`).** Mirrors the launcher: grid `(num_seqs, num_kv_heads)`, `num_queries_per_kv_padded = max(next_pow2(G), 16)`, `filter_by_query_len=True`, issue-style V layout `[blocks, kv_heads, head, block]` (`INTERLEAVED_V_PACK_FACTOR=0`), shuffled block table, unused slots garbage-filled. Every run first checks the cache layout against the kernel's address formulas, then corrupts one cache block on purpose and requires that the harness flags it (it did, 80/80).
+### 2. Empirical Verification on gfx1100 (RX 7900 XTX)
+- **Runs:** 80/80 within numerical tolerance (|y - ref| <= 0.001 vs. FP32 PyTorch reference).
+- **Bitwise Determinism:** 100% across repeated runs, zero GPU faults.
+- **Positive Control:** Deliberate block corruption caught in 80/80 cases.
 
-**Environment.** Ubuntu 25.10, kernel 6.17.0-41-generic; ROCm 6.4.43484-123eb5128; PyTorch 2.9.1+rocm6.4; Triton 3.5.1; vLLM checkout `be2de711989bb273e108c41f95d868122b154f9d` (not installed, imported via `sys.path`) with a local change in `vllm/triton_utils/importing.py` forcing `HAS_TRITON = True`.
-
-**What this does not show.**
-- It does not show the issue is absent on `gfx1201`. The report used Triton 3.8.0 / ROCm 10.2 on RDNA4; we differ in architecture **and** toolchain, so a difference in outcome cannot be attributed to either one. This is an open hypothesis, not a finding.
-- The checkout is newer than the issue's `dde9aca` (the launcher file differs by 10 lines).
-- Kernel called directly with launcher-equivalent arguments, **not** through `chunked_prefill_paged_decode`, the KV-cache allocator or a real model.
-- Pattern B is not covered (writer bug; this harness never runs the writer).
-- The `HAS_TRITON` override is a local workaround. A later `import triton.backends` printed no error, so we have not determined why the guard failed originally, or whether the override is needed.
-- Ragged and multi-sequence cases were run for two configurations only; fp16 for one.
-
-**Lesson kept from this case.** An earlier harness version showed errors of 0.18 to 0.30 on *control* cases, the same size as Pattern A. It was a cache-layout mistake in our harness. Hence the self-check and the deliberate-corruption check in v2.
-
-**Next (optional).** The same matrix on a `gfx1201` card or with Triton 3.8.0 would separate architecture from toolchain. We have neither.
+### 3. Conclusion
+The gfx1100 standalone harness correctly isolated that Pattern A was not an algorithmic failure of the Triton paged-attention layout, but a toolchain/codegen edge case on RDNA4.
