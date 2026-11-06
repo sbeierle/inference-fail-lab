@@ -1,4 +1,4 @@
-﻿# 🔬 Inference Fail-Lab
+# 🔬 Inference Fail-Lab
 
 Edge-case verification, failure telemetry, and kernel-level checks for LLM serving engines (vLLM, SGLang, TensorRT-LLM). Including the cases that turned out to be our own mistakes.
 
@@ -21,10 +21,32 @@ The lab reproduces such cases on bare-metal hardware and compares against an FP3
 
 | Case | Target | Subsystem | What was observed | Status |
 | :--- | :--- | :--- | :--- | :--- |
+| [**CASE-005**](cases/CASE-005.md) | NVIDIA Blackwell (`GB300 NVL` / `SM 10.3`) | FlashInfer `allreduce_fusion` / `cake_gemm_allreduce_binding.cu`, issue #6558 | **Eager CUPTI Skew Artifact vs. Graphed Parity:** C++ binding inspection isolated missing one-shot registrations for n32–n128. Requested per-call launch traces; upstream rerun under CUDA Graphs + PDL disproved alleged 1.3–3.1x regression as eager host launch skew spun away in collective waits. Crossover restated to 3–4 MB (±1 µs parity). Spin-off: MNNVL multi-node hang isolated (#7883). | 🟢 **Closed / Benchmark Artifact Refined** |
 | [**CASE-004**](cases/CASE-004.md) | AMD RDNA3 (`gfx1100`) vs. RDNA4 (`gfx1201`) | vLLM `kernel_paged_attention_2d`, issue #62697 | **Confirmed Upstream Resolution:** 80/80 runs on gfx1100 established the clean baseline. Upstream maintainers confirmed Pattern A is isolated to gfx1201 Triton/LLVM buffer-ops (< 2 GiB) and mitigated via PR #63735 (`num_stages=1`). | 🟢 **Closed / Verified by Upstream** |
 | [**CASE-003**](cases/CASE-003.md) | AMD RDNA3 (`gfx1100`) | Triton decode kernel, direct call | Compile aborts, traced to our harness, not to the vLLM launcher | ⚪ Withdrawn as a vLLM bug |
 | [**CASE-002**](cases/CASE-002.md) | NVIDIA Blackwell (GB300 / SM 10.3) | vLLM TRITON_MLA | Batch invariance violation via chunked LSE rescaling | 🟡 Triage, not re-reviewed in this revision |
 | [**CASE-001**](cases/CASE-001.md) | NVIDIA Grace-Blackwell (GB10) | Chunked prefill scheduler | Deadlock on FULL_AND_PIECEWISE attention | 🟡 Benchmarking, not re-reviewed in this revision |
+
+---
+
+## 🔍 [CASE-005](cases/CASE-005.md): FlashInfer #6558 Eager CUPTI Spin-Wait Skew vs. CUDA Graph Replay on GB300 NVL
+
+**Background.** flashinfer-ai/flashinfer#6558 reported that on NVIDIA GB300 NVL (TP4, SM103), FlashInfer's `allreduce_fusion` AUTO heuristic picked two-shot all-reduce ~16x below the apparent crossover point (~1 MiB vs. 12–21 MB), allegedly leaving 1.3x–3.1x throughput uncollected across major serving recipes (DeepSeek-V4.1, GLM-5.3, Nemotron-3-Ultra).
+
+**Independent Dispatch & Binding Audit.**
+Inspection of the underlying C++ registration table in `cake_gemm_allreduce_binding.cu` revealed an architectural routing disparity:
+- Tile `n16` was registered for one-shot (`ws4`), while `n32`, `n64`, and `n128` were registered exclusively as two-shot.
+- Highlighting the 42-token anomaly (AUTO running at 192.4 µs vs. 100.7 µs forced two-shot and 44.4 µs forced one-shot), we called for a per-call kernel launch trace to separate CPU launch latency from true device execution, while explicitly cautioning against a blanket `force_oneshot_support=True` override due to two-shot dominance in the prefill tail (218.4 µs vs. 307.2 µs at 46.4 MB).
+
+**Upstream Root-Cause Resolution & Trace Parity.**
+Subsequent re-benchmarking by FlashInfer maintainers using production serving harness semantics (`bench_gpu_time`, cold L2, `launch_with_pdl=True`, CUDA Graph capture) revealed the original 3x gap was an eager-execution measurement artifact:
+1. **Eager Launch Skew:** Under back-to-back eager CUPTI timing, host-side launch skew across 4 ranks was spun away inside the collective's spin-wait synchronization loops, artificially penalizing two-shot due to its two synchronization barriers.
+2. **CUDA Graph Parity:** Under CUDA Graph replay with Programmatic Dependent Launch (PDL), the decode-size gap collapsed to <= 1.2x on 15–25 µs kernels, with AUTO matching the optimal fixed form within ±1 µs.
+3. **Crossover Restatement:** The true physical crossover restated from 12–21 MB down to ~3–4 MB aggregate (48–64 tokens). End-to-end serving recipes showed threshold tuning remained neutral within ±5–7% system noise bands.
+4. **Isolated Upstream Bug (#7883):** Validating the one-shot boundary across topologies isolated a deterministic CUDA Graph hang at multi-MB payloads on 2-node MNNVL, tracked independently as issue #7883.
+
+**Forensic Conclusion.**
+Static binding analysis combined with execution-trace scrutiny prevented an ungrounded heuristic retune in upstream FlashInfer. Issue closed cleanly as *not planned* to preserve tracker integrity. See full case report: [`cases/CASE-005.md`](cases/CASE-005.md).
 
 ---
 
@@ -60,7 +82,7 @@ An earlier version described Triton compile aborts for head sizes 96 / 192 and b
 
 ## 🛠️ Repository layout
 ```text
-├── cases/             # Per-case reports (CASE-001, CASE-002, CASE-003, CASE-004)
+├── cases/             # Per-case reports (CASE-001, CASE-002, CASE-003, CASE-004, CASE-005)
 ├── docs/assets/       # Terminal logs and before/after forensics
 ├── harness/           # Reproducible test harnesses (repro_a_v2.py, matrix runners)
 ├── results/           # Raw logs of 80/80 runs on gfx1100
