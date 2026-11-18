@@ -21,11 +21,28 @@ The lab reproduces such cases on bare-metal hardware and compares against an FP3
 
 | Case | Target | Subsystem | What was observed | Status |
 | :--- | :--- | :--- | :--- | :--- |
+| [**CASE-006**](cases/CASE-006.md) | AMD CDNA2 (`gfx90a` / MI250X) & CDNA3/3.5 (`gfx942`/`gfx950`) | vLLM `wvSplitK` (`skinny_gemms_wvsplitk.cu`, `WVSPLIT_TILE_GENERIC`), issue `#67110` | **BF16 Register-Spill Regression at $N \in \{3, 5\}$:** Isolated a 14% end-to-end decode slowdown at 5 concurrent requests on MI250X to unpadded LM-head dispatch (`124160x5120`, 8.17x slower than `hipBLASLt`). Source inspection traced the regression to missing VGPR budget guards in `WVSPLIT_TILE_GENERIC` (`YTILE * __N >= 12`), causing `bf16` `fp32`-widening accumulators to spill into HBM scratch memory. Upstream PR `#66444` adopted the `YTILE=2` fix for `wave64` `N=5` (1.9–5.7x speedup on MI355X); `gfx90a` (`N=3`, `N=5`) remains open. | 🟡 Partially Resolved (`#66444` open for `gfx942`/`gfx950`; `gfx90a` pending) |
 | [**CASE-005**](cases/CASE-005.md) | NVIDIA Blackwell (`GB300 NVL` / `SM 10.3`) | FlashInfer `allreduce_fusion` / `cake_gemm_allreduce_binding.cu`, issue #6558 | **Eager CUPTI Skew Artifact vs. Graphed Parity:** C++ binding inspection isolated missing one-shot registrations for n32–n128. Requested per-call launch traces; upstream rerun under CUDA Graphs + PDL disproved alleged 1.3–3.1x regression as eager host launch skew spun away in collective waits. Crossover restated to 3–4 MB (±1 µs parity). Spin-off: MNNVL multi-node hang isolated (#7883). | 🟢 **Closed / Benchmark Artifact Refined** |
 | [**CASE-004**](cases/CASE-004.md) | AMD RDNA3 (`gfx1100`) vs. RDNA4 (`gfx1201`) | vLLM `kernel_paged_attention_2d`, issue #62697 | **Confirmed Upstream Resolution:** 80/80 runs on gfx1100 established the clean baseline. Upstream maintainers confirmed Pattern A is isolated to gfx1201 Triton/LLVM buffer-ops (< 2 GiB) and mitigated via PR #63735 (`num_stages=1`). | 🟢 **Closed / Verified by Upstream** |
 | [**CASE-003**](cases/CASE-003.md) | AMD RDNA3 (`gfx1100`) | Triton decode kernel, direct call | Compile aborts, traced to our harness, not to the vLLM launcher | ⚪ Withdrawn as a vLLM bug |
 | [**CASE-002**](cases/CASE-002.md) | NVIDIA Blackwell (GB300 / SM 10.3) | vLLM TRITON_MLA | Batch invariance violation via chunked LSE rescaling | 🟡 Triage, not re-reviewed in this revision |
 | [**CASE-001**](cases/CASE-001.md) | NVIDIA Grace-Blackwell (GB10) | Chunked prefill scheduler | Deadlock on FULL_AND_PIECEWISE attention | 🟡 Benchmarking, not re-reviewed in this revision |
+
+---
+### 🔍 [**CASE-006**](cases/CASE-006.md): vLLM `#67110` — ROCm `wvSplitK` VGPR Register Spills at Odd Skinny Batches ($N \in \{3, 5\}$)
+
+**Background.** On ROCm, `rocm_unquantized_gemm_impl` routes unquantized linear projections with $1 \le N \le 5$ activation rows to the custom `wvSplitK` kernel. During multi-stream serving benchmarks on AMD Instinct MI250X (`gfx90a`, 110 CUs per GCD, LUMI-G), decode step latency degraded by **14%** at exactly $N=5$ concurrent requests (`79.56 ms` vs. `69.33 ms` with `VLLM_ROCM_USE_SKINNY_GEMM=0`), whereas $N \in \{1, 2, 4, 6, 8\}$ showed no comparable regression.
+
+**Independent Isolation & Source-Level Root-Cause Audit.**
+* **End-to-End vs. Layer Isolation:** Under default CUDA/HIP graph capture buckets `(1, 2, 4, 8, ...)`, a 5-request decode batch pads transformer layers to $N=8$ (bypassing `wvSplitK`), while the uncaptured LM head (`124160 x 5120`, `bf16`) executes at true $N=5$ (`11.37 ms` vs. `1.39 ms` in `hipBLASLt` / `F.linear` — an **8.17x** slowdown matching the observed ~10 ms step penalty).
+* **Standalone Kernel Matrix (`repro_wvsplitk.py`):** Across 200 calls (median of 7 rotated runs, relative error $1.65\times 10^{-3}$ vs. FP32 reference), `wvSplitK` beat `hipBLASLt` at $N \in \{1, 4\}$ (`0.81x–0.84x`), but regressed sharply at $N=3$ (`3.27x–3.34x`) and $N=5$ (`3.14x–8.22x`).
+* **Dispatch Macro Forensics (`csrc/rocm/skinny_gemms_wvsplitk.cu`):** Inspection of `WVSPLIT_TILE_GENERIC` revealed an asymmetric guard: `__N == 4` explicitly drops unrolling (`UNRL = 1`) on `YTILE = 4` tiles (`sYT > 12`) to fit within the `gfx90a` VGPR budget, whereas `__N == 3` and `__N == 5` fell through to `YTILE = 4, UNRL = 2` (and `YTILE = 3, UNRL = 2` at `M = 5120`). Because `bf16` dot products on CDNA widen operands to `fp32` accumulators (`4 * N` accumulators plus double-buffered loads), register pressure overflows into HBM scratch memory.
+
+**Upstream Adoption & Scope Boundary.**
+* **Upstream PR `#66444` (`gfx942` / `gfx950`):** AMD engineers verified the identical `bf16` `N=5` register spill on MI355X (`gfx950` — triggered at single-request speculative decoding with 4 draft tokens), confirming `248–272 B/lane` scratch spills via `-Rpass-analysis=kernel-resource-usage` vs. `0 B/lane` when pinned to `YTILE=2, UNRL=2` (achieving **1.9x–5.7x** bit-identical speedups).
+* **Remaining Open Surface (`gfx90a`):** PR `#66444` restricts its scope to `N=5` on `gfx942`/`gfx950`, leaving `gfx90a` (`N=3` and `N=5`) and a secondary `1.5x` discrepancy at `5120 x 3072` ($6 \le N \le 32$) open for follow-up.
+
+**Forensic Conclusion.** Pairing black-box serving step telemetry with targeted kernel-dispatch source inspection exposed a latent register-allocation cliff masked by CUDA-graph bucket padding. Publishing minimal, reproducible isolation harnesses lets hardware vendors own the C++ kernel maintenance while preserving an auditable trail of cross-layer root-cause attribution. See full case report: [`cases/CASE-006.md`](cases/CASE-006.md).
 
 ---
 
