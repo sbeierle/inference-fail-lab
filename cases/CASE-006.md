@@ -69,3 +69,14 @@ Inspection of `csrc/rocm/skinny_gemms_wvsplitk.cu` (lines 73–86) isolated the 
 - **Unresolved Items:**
   1. `gfx90a` (`MI250X`) still spills even at `YTILE=2, UNRL=2` (`148 / 20 / 176 B/lane`) and remains regressed at both $N=3$ and $N=5$.
   2. Secondary uninvestigated `1.5x` discrepancy at `5120 x 3072` for $6 \le N \le 32$ (`0.067 ms` vs. `0.045 ms` in `F.linear`).
+
+  ## Upstream Merge Update (`vllm-project/vllm#66444`, commit `3e469e9`)
+
+- **Merged into `vllm-project:main`:** PR `#66444` (`[ROCm] wvSplitK: keep bf16 N=5 at YTILE 2 on wave64 to avoid VGPR spills`, referencing `#67110` and crediting `#63015`) was approved by `@mawong-amd` and merged by `@AndreasKaratzas` (`3e469e9`).
+- **Bare-Metal Verification (AMD):**
+  - **MI355X (`gfx950`):** `1.7x–5.7x` speedup across `out_dim > 8192` (`28672x4096`: `168.7 -> 35.9 us`; `202048x512`: `271.8 -> 72.9 us`), `0 B/lane` scratch spill, bitwise identical.
+  - **MI300X (`gfx942`):** `1.7x–3.3x` speedup at `out_dim 12288–28672`, `0 B/lane` scratch spill, bitwise identical.
+- **Explicitly Still Open:**
+  - `N=3` is not modified by `#66444`.
+  - `gfx90a` (MI250X) was not benchmarked; compiler resource output still reports lower residual spills at `YTILE=2, UNRL=2` (`148 / 20 / 176 B/lane` vs. `368 / 140 / 364 B` at `YTILE=3` and `604 / 260 / 648 B` at `YTILE=4`).
+  - Small-`K` / large-weight shapes (`K <= 512`, `out_dim >= 28672`) remain `1.2x–1.9x` behind hipBLASLt and are queued for a separate dispatch follow-up.
