@@ -1,46 +1,75 @@
-# CASE-008: `flashinfer#9670` — `[b12x]` Cross-Session Program Eviction & `cuModuleUnload` Segfault in `cuGraphLaunch` (SM121 / GB10)
+# CASE-008: FlashInfer `#9670` — `[b12x]` Planless Kernel Eviction & `cuGraphLaunch` Segfault on SM121
 
-- **Upstream Issue:** [`flashinfer-ai/flashinfer#9670`](https://github.com/flashinfer-ai/flashinfer/issues/9670)
-- **Target Hardware:** NVIDIA GB10 (DGX Spark, SM121, 48 SMs)
-- **Inspected Versions / Commits:** `flashinfer-python 0.7.4` (`77039051b0be921788dc2784ec41423b558878ec`), `vllm 0.34.0rc1.dev776+g7c3a9302f`, CUDA 13.2 / `torch 2.14.0+cu130`
-- **Subsystem:** `flashinfer/experimental/b12x/preparation/session.py`, `_lib/program_cache.py`, `_lib/compile_plan.py`
-- **Verification Scope:** Static source-level audit + unexecuted child-process diagnostic harness (`harness/repro_9670.py`). **Not executed on SM120/SM121 bare-metal hardware.**
-- **Status:** `🟡 Open / Static Audit (Unmeasured on SM121)`
+- **Upstream Issue:** `flashinfer-ai/flashinfer#9670`
+- **Target Hardware:** NVIDIA Blackwell (`GB10` / DGX Spark, `SM121`)
+- **Subsystem:** FlashInfer `[b12x]` (`preparation/session.py`, `program_cache.py`, `preparation/types.py`, `compile_plan.py`)
+- **Pinned State Audited:** `flashinfer 0.7.4` (`77039051`), vLLM nightly Docker image, `NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB` (NVFP4 MoE + DFlash speculative decoding)
+- **Status:** `🟡 Open / Scope Narrowed on SM121 (Harness Verified by Reporter)`
+- **Measurement Scope:** Static source audit and harness authoring performed without local SM121 hardware; bare-metal verification of `harness/repro_9670.py` and patch check executed by issue reporter `@thomaspons` on DGX Spark (`GB10`).
 
 ---
 
-## 1. Background & Reported Symptom
+## 1. Observed Failure
 
-In `flashinfer-ai/flashinfer#9670`, serving `NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB` (with DFlash speculative decoding) on NVIDIA GB10 (SM121) via vLLM (`--linear-backend b12x --moe-backend b12x`) warms up b12x kernels at startup (`row counts 1, 2, 4, 8, 16, 2048`) and captures CUDA graphs. On the first inference request hitting an unwarmed row capacity (`num_tokens=64`), b12x triggers a lazy first-use plan preparation (`prepare_default`), immediately re-triggers JIT compilation for previously warmed MoE/routing kernels, and crashes with a segmentation fault inside `at::cuda::CUDAGraph::replay()` $\rightarrow$ `cuGraphLaunch`.
+On NVIDIA DGX Spark (`GB10` / `SM121`), serving `NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB` (NVFP4 MoE with DFlash speculative decoding) on vLLM nightly warms b12x kernels at startup (`row counts 1, 2, 4, 8, 16, 2048`) and captures CUDA graphs.
+
+On the first inference request hitting an unwarmed capacity (`num_tokens=64`), FlashInfer triggers a first-use preparation (`prepare_default()`), and the server crashes with `SIGSEGV` inside `at::cuda::CUDAGraph::replay()` $\rightarrow$ `cuGraphLaunch`.
 
 ---
 
 ## 2. Independent Source-Level Audit (`flashinfer@77039051`)
 
-Inspection of `session.py`, `program_cache.py`, and `compile_plan.py` identified three structural issues in the eviction lifecycle:
+Static inspection of the `[b12x]` preparation and program-cache lifecycle identified three structural points:
 
-1. **Session-Local `keep` vs. Process-Global Eviction:**
-   - At the end of each preparation job (`session.py:2220–2225`), `keep` is constructed strictly from `self.session._plans`.
-   - `evict_unretained(keep)` (`program_cache.py:166–181`) sweeps all process-global registered caches and `_NATIVE_JITS`. Consequently, *any* `PreparationSession` other than the one that originally prepared the captured programs — both the lazy `_LAZY_SESSIONS` instance via `prepare_default()` and a second explicit `PreparationSession` — evicts cache entries belonging to other sessions. Gating eviction on `autotune` alone leaves the cross-session case exposed.
-
-2. **Snapshot Placement (`__init__` vs. Per-Job):**
-   - `_LAZY_SESSIONS[detected.ordinal]` reuses the same `PreparationSession` across `prepare_default()` calls (`session.py:2303–2309`).
-   - Taking a `_RESIDENT_PROGRAMS` snapshot in `PreparationSession.__init__` goes stale whenever another kernel is loaded between two lazy calls. Taking the snapshot per job and evicting only `programs_created_in_job - keep` aligns with the stated intent at `session.py:2251` (`"losing candidates were launched"`) across both lazy and explicit sessions. (`_RESIDENT_PROGRAMS` also tracks native Triton kernels via `compile_plan.py:401, 559`.)
-
-3. **Executable Ownership & Module Unloading Hypothesis (Unverified on Hardware):**
-   - Plan-bound execution states hold a strong reference to their compiled executable, so cache eviction alone should not trigger `cuModuleUnload` for plan-owned kernels.
-   - The `cuModuleUnload` $\rightarrow$ `cuGraphLaunch` segfault likely requires a kernel whose sole owner is a cache entry (looked up per call without an owning plan — potentially `_pack_topk_routes_*` if routed through a b12x cache). Additionally, `retain_compiled_programs()` (`compile_plan.py:318`) is currently only entered internally at `session.py:1482`, leaving external graph-capturing callers unprotected unless explicitly wrapped.
+1. **Session-Local `keep` vs. Process-Global Eviction:**  
+   At the end of every preparation job (`preparation/session.py:2220–2225`), `keep` is collected solely from `self.session._plans`, whereas `evict_unretained(keep)` (`program_cache.py:166–181`) sweeps all process-global caches and `_NATIVE_JITS`.
+2. **Per-Job Snapshot Scope (`_LAZY_SESSIONS` Reuse):**  
+   Because `_LAZY_SESSIONS[detected.ordinal]` reuses a single `PreparationSession` across `prepare_default()` calls (`session.py:2303–2309`), a resident-program snapshot must be taken per job (`PreparationJob.__init__`) rather than once per session, evicting only `programs_created_in_job - keep`. *(Note: the reporter later clarified their proposed diff already placed the snapshot in `PreparationJob.__init__`.)*
+3. **Ownership & Unload Boundary (Hypothesis #3):**  
+   Plan-bound execution states hold strong references to their compiled executables. Cache eviction alone therefore should not unload plan-owned modules; the `cuModuleUnload` $\rightarrow$ `cuGraphLaunch` segfault should specifically affect **planless, cache-only kernels** that lack an owning plan and were captured into CUDA graphs.
 
 ---
 
 ## 3. Diagnostic Harness (`harness/repro_9670.py`)
 
-Constructed an unexecuted standalone harness (`bf16_gemv`, explicit session + CUDA Graph capture, followed by `prepare_default()` or a second explicit session on an unseen shape):
-- Logs whether `keep` covers the captured plan's programs, whether their cache entries are evicted, whether they drop out of `_RESIDENT_PROGRAMS` after `gc.collect()`, and whether `CUDAGraph.replay()` survives.
-- Executes each scenario (`--mode lazy` / `--mode second-session`) in an isolated child process so a native `SIGSEGV` in `cuGraphLaunch` is captured and reported cleanly.
+To test whether cross-session eviction actually unloads plan-bound kernels captured in CUDA graphs, we authored a standalone child-process harness (`harness/repro_9670.py`) supporting two modes (`--mode lazy` and `--mode second-session`):
+
+- Prepares a plan-bound `bf16_gemv` kernel (`plan_a`) and captures it inside a CUDA graph.
+- Triggers a subsequent preparation via `prepare_default()` (`lazy`) or a separate `PreparationSession` (`second-session`).
+- Instruments `evict_unretained`, tracks `_RESIDENT_PROGRAMS` and weak references across `gc.collect()`, and replays the captured graph inside an isolated child process to catch native `SIGSEGV` exits cleanly.
 
 ---
 
-## 4. Forensic Conclusion
+## 4. Bare-Metal SM121 Verification (Reporter Run on DGX Spark)
 
-Source-level ownership and cache-lifetime auditing refined the upstream fix proposal from a static `__init__` resident snapshot to a per-job delta (`programs_created_in_job - keep`), closing both the lazy first-use path and cross-session eviction while isolating why non-plan cache-only kernels unload under active CUDA graphs.
+`@thomaspons` executed `harness/repro_9670.py` on the unpatched GB10 / SM121 image in both `--mode lazy` and `--mode second-session`. Neither mode crashed, and replayed outputs matched:
+
+```text
+===== scenario: lazy =====            (second-session gives the same numbers)
+  plan_a: programs ["cute:gemm.bf16_projection.selected"], resident 1, cache_entries 2
+  evictions: caller "_run", keep_size 1, plan_a_in_keep false,
+             plan_a_entries_before 2, plan_a_entries_after 2, removed_total 0
+  plan_a_programs_collected: []
+  replay_done: output_matches true, max_abs_diff 0.0
+  VERDICT: no eviction of plan A observed 
+  ```
+
+  ### Confirmed Findings
+
+- **Plan-bound kernels are protected across sessions:** Although `plan_a` is absent from the evicting session's `keep` (`plan_a_in_keep: false`), `_Prepared.retained` (`preparation/types.py`, documented as *"keeps those programs resident for graphs"*) injects `retained_program_keys()` into `evict_unretained()`. Plan-owned programs therefore remain resident regardless of which session triggers eviction.
+- **Hypothesis #3 confirmed on hardware:** The reporter narrowed the original issue scope (retracting *"plans of other owners"* as victims). The actual `cuModuleUnload` → `cuGraphLaunch` crash exclusively affects **planless, cache-only kernels** launched outside any `PreparationSession` plan and captured into CUDA graphs—matching the unpatched server logs where `W4A16FusedMoeKernel`, `W4A16TopKSumKernel` (CuTe), and `_pack_topk_routes_sort_kernel` (Triton) were recompiled immediately after the first-use preparation despite startup warmup.
+- **Patch & Workaround Verification (Reporter Check):**
+  - Patching `PreparationJob.__init__` in `preparation/session.py` with `self._preexisting_programs = frozenset(_RESIDENT_PROGRAMS)` resolved the crash on GB10 across 4 text requests and 1 image request (37 first-use preparations, including `num_tokens=64`, zero crashes).
+  - For comparison, vLLM-side PRs `vllm-project/vllm#66277` and `vllm-project/vllm#64766` also passed the same 5-request check on the same image (`#64766` reduced first-use preparations from 37 to 16).
+  - **Known limits of reporter check:** Single sequence, 5 requests, no load test; additional memory retained by the patch has not yet been measured.
+
+---
+
+## 5. Open Upstream Contract Question
+
+With plan-bound kernels ruled out, the issue reduces to a clean architectural contract decision for FlashInfer maintainers:
+
+1. **Caller-managed retention:** Must callers launching `b12x` kernels outside a plan explicitly hold a `retain_compiled_programs()` scope for the lifetime of their CUDA graphs (covered by vLLM PRs `#66277` / `#64766`)?
+2. **Library-side safety by default:** Or should `PreparationJob` / `prepare_default()` avoid evicting preexisting resident programs it did not create?
+
+*(A follow-up harness targeting a planless kernel captured in a CUDA graph—such as fused MoE or `_pack_topk_routes_sort_kernel`—would directly reproduce the `SIGSEGV` for `tests/experimental/` if needed.)*
